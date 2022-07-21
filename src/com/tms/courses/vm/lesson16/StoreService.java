@@ -2,10 +2,8 @@ package com.tms.courses.vm.lesson16;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class StoreService
 {
@@ -69,19 +67,49 @@ public class StoreService
 
     public static void sum(Store store)
     {
-        //your code
-        //System.out.println();
+        Optional<Double> sum = store.getOrders().stream()
+                .map(order -> order.getEntries().entrySet().stream()
+                        .map(StoreService::getEntryTotalPrice)
+                        .reduce(Double::sum)
+                        .get())
+                .reduce(Double::sum);
+        System.out.println(sum.get());
+    }
+
+    private static double getEntryTotalPrice(Map.Entry<Product, Integer> entry)
+    {
+        return entry.getKey().getPrice() * entry.getValue();
     }
 
     public static void showOrders(Store store, Date from, Date to)
     {
-        //your code
-        //System.out.println();
+        List<Order> orders = store.getOrders().stream()
+                .filter(order -> order.getDate().after(from) && order.getDate().before(to))
+                .collect(Collectors.toList());
+        System.out.println(orders);
     }
 
     public static void findMostValuableProduct(Store store)
     {
-        //your code
-        //System.out.println();
+        Map<Product, Double> productToTotalEarningsMap = new HashMap<>();
+        store.getOrders().stream()
+                .forEach(order ->
+                {
+                    order.getEntries().entrySet().stream()
+                            .forEach(entry ->
+                            {
+                                Product product = entry.getKey();
+                                Double priceToSet = getEntryTotalPrice(entry);
+                                if (productToTotalEarningsMap.containsKey(product))
+                                {
+                                    priceToSet += productToTotalEarningsMap.get(product);
+                                }
+                                productToTotalEarningsMap.put(product, priceToSet);
+                            });
+                });
+        Optional<Product> result = productToTotalEarningsMap.entrySet().stream()
+                .max(Comparator.comparingDouble(Map.Entry::getValue))
+                .map(Map.Entry::getKey);
+        System.out.println(result.get());
     }
 }
